@@ -455,7 +455,7 @@ class PagePermissionsPermissionManager(models.Manager):
         from cms.models import (GlobalPagePermission, PagePermission,
                                 MASK_PAGE, MASK_CHILDREN, MASK_DESCENDANTS)
         if attr != "can_view":
-            if not user.is_authenticated() or not user.is_staff:
+            if not user.is_authenticated():
                 return []
         if user.is_superuser or not settings.CMS_PERMISSION:
             # got superuser, or permissions aren't enabled? just return grant
