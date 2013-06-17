@@ -16,10 +16,6 @@ class GoogleMapPlugin(CMSPluginBase):
             'fields': ('title', 'address', ('zipcode', 'city',),
                        'content', 'zoom', ('lat', 'lng'),),
         }),
-        (_('Advanced'), {
-            'fields': (('route_planer', 'route_planer_title'),
-                       ('width', 'height',),),
-        }),
     )
 
     def render(self, context, instance, placeholder):
