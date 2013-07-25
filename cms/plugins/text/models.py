@@ -1,5 +1,5 @@
 from cms.models import CMSPlugin
-from cms.plugins.text.utils import (plugin_admin_html_to_tags, 
+from cms.plugins.text.utils import (plugin_admin_html_to_tags,
     plugin_tags_to_admin_html, plugin_tags_to_id_list, replace_plugin_tags)
 from cms.utils.html import clean_html
 from django.db import models
@@ -7,15 +7,34 @@ from django.utils.html import strip_tags
 from django.utils.text import truncate_words
 from django.utils.translation import ugettext_lazy as _
 
+from html5lib import sanitizer, serializer, treebuilders, treewalkers
+import html5lib
+
+
+class HTMLSanitizer(sanitizer.HTMLSanitizer):
+    allowed_elements = (sanitizer.HTMLSanitizer.acceptable_elements +
+                        sanitizer.HTMLSanitizer.mathml_elements +
+                        sanitizer.HTMLSanitizer.svg_elements +
+                        ["iframe"])
+
+    allowed_attributes = (sanitizer.HTMLSanitizer.acceptable_attributes +
+                          sanitizer.HTMLSanitizer.mathml_attributes +
+                          sanitizer.HTMLSanitizer.svg_attributes +
+                          ["src"])
+
+
+_HTML_PARSER = html5lib.HTMLParser(tokenizer=HTMLSanitizer,
+                                   tree=treebuilders.getTreeBuilder("dom"))
+
 _old_tree_cache = {}
 
 class AbstractText(CMSPlugin):
     """Abstract Text Plugin Class"""
     body = models.TextField(_("body"))
-    
+
     class Meta:
         abstract = True
-    
+
     def _set_body_admin(self, text):
         self.body = plugin_admin_html_to_tags(text)
 
@@ -30,13 +49,13 @@ class AbstractText(CMSPlugin):
                               """)
 
     search_fields = ('body',)
-    
+
     def __unicode__(self):
         return u"%s" % (truncate_words(strip_tags(self.body), 3)[:30]+"...")
-    
+
     def clean(self):
-        self.body = clean_html(self.body, full=False)
-    
+        self.body = clean_html(self.body, full=False, parser=_HTML_PARSER)
+
     def clean_plugins(self):
         ids = plugin_tags_to_id_list(self.body)
         plugins = CMSPlugin.objects.filter(parent=self)
@@ -55,9 +74,9 @@ class AbstractText(CMSPlugin):
 
         self.body = replace_plugin_tags(old_instance.get_plugin_instance()[0].body, replace_ids)
         self.save()
-            
+
 class Text(AbstractText):
     """
     Actual Text Class
     """
-    
+
